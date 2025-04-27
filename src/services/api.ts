@@ -1,5 +1,5 @@
-import { Location, Weather, City, GeocodeResult } from '../types';
-import { searchLocationsByPlace, geocodePlace } from './openTripMapService';
+import { Location, Weather, City, GeocodeResult, LocationGroup } from '../types';
+import { searchLocationsByPlace, geocodePlace, groupLocationsByType } from './openTripMapService';
 import { getWeatherByCity as getWeatherByCityFromService, getWeatherByCoordinates } from './weatherService';
 
 // Mock data is kept for fallback and featured cities
@@ -112,21 +112,22 @@ const FEATURED_CITIES: City[] = [
   }
 ];
 
-// Updated API functions
+// Updated API functions with improved error handling and pagination support
 export const searchLocations = async (query: string): Promise<Location[]> => {
   console.log(`Searching for locations matching: ${query}`);
   
   try {
-    // First try to fetch from real API
+    // Try to fetch from real API first
     const locations = await searchLocationsByPlace(query);
     
     // If we got results, return them
     if (locations && locations.length > 0) {
+      console.log(`Found ${locations.length} locations for ${query} from API`);
       return locations;
     }
     
-    // If API search fails, fall back to mock data
-    console.log('Falling back to mock data search');
+    // If API search fails or returns no results, fall back to mock data
+    console.log(`No API results for ${query}, falling back to mock data search`);
     return MOCK_LOCATIONS.filter(
       location => location.name.toLowerCase().includes(query.toLowerCase()) ||
                 location.description.toLowerCase().includes(query.toLowerCase())
@@ -142,6 +143,7 @@ export const searchLocations = async (query: string): Promise<Location[]> => {
   }
 };
 
+// Get weather by place name
 export const getWeatherByPlace = async (place: string): Promise<Weather | null> => {
   console.log(`Getting weather for place: ${place}`);
   
@@ -180,10 +182,12 @@ export const getWeatherByPlace = async (place: string): Promise<Weather | null> 
   }
 };
 
+// Get weather by city name (alias for getWeatherByPlace)
 export const getWeatherByCity = async (city: string): Promise<Weather | null> => {
   return getWeatherByPlace(city);
 };
 
+// Get featured cities
 export const getFeaturedCities = async (): Promise<City[]> => {
   console.log('Getting featured cities');
   
@@ -194,9 +198,15 @@ export const getFeaturedCities = async (): Promise<City[]> => {
   });
 };
 
+// Get locations by city name
 export const getLocationsByCity = async (city: string): Promise<Location[]> => {
   console.log(`Getting locations for city: ${city}`);
   return searchLocations(city);
+};
+
+// Group locations by type
+export const getGroupedLocations = (locations: Location[]): LocationGroup[] => {
+  return groupLocationsByType(locations);
 };
 
 // Favorites management (using local storage)

@@ -83,7 +83,7 @@ const LocationCard = ({ location, onFavoriteChange }: LocationCardProps) => {
       
       <div className="p-4 flex flex-col flex-grow">
         <div className="flex justify-between items-start mb-2">
-          <h3 className="text-lg font-semibold">{location.name}</h3>
+          <h3 className="text-lg font-semibold line-clamp-2">{location.name}</h3>
           {location.priceLevel && (
             <span className="text-sm text-gray-500">{location.priceLevel}</span>
           )}
@@ -92,17 +92,30 @@ const LocationCard = ({ location, onFavoriteChange }: LocationCardProps) => {
         <div className="mb-2 flex flex-wrap gap-1 items-center">
           {renderTypeTag()}
           
-          {location.highlights && location.highlights.slice(0, 2).map((highlight, i) => (
+          {location.highlights && location.highlights.map((highlight, i) => (
             <span key={i} className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded">
               {highlight}
             </span>
           ))}
         </div>
         
-        <p className="text-sm text-gray-600 mb-4 flex-grow">{location.description}</p>
+        <p className="text-sm text-gray-600 mb-4 flex-grow line-clamp-3">{location.description}</p>
+        
+        {location.amenities && location.amenities.length > 0 && (
+          <div className="mb-3">
+            <p className="text-xs text-gray-500 mb-1">Amenities:</p>
+            <div className="flex flex-wrap gap-1">
+              {location.amenities.map((amenity, i) => (
+                <span key={i} className="bg-tourism-teal/10 text-tourism-teal text-xs px-2 py-0.5 rounded">
+                  {amenity}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
         
         <div className="flex items-center text-sm text-gray-500 mb-3">
-          <MapPin className="h-3.5 w-3.5 mr-1" />
+          <MapPin className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
           <span className="truncate">{location.address}</span>
         </div>
         

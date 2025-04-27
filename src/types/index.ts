@@ -69,7 +69,7 @@ export interface OpenTripMapPlace {
     lon: number;
     lat: number;
   };
-  rate?: number;
+  rate?: string;
   osm?: string;
   wikidata?: string;
   dist?: number;

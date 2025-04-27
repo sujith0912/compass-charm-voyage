@@ -3,6 +3,7 @@ import { Location, LocationGroup } from '@/types';
 import LocationCard from './LocationCard';
 import { Star, Sparkles, MapPin } from 'lucide-react';
 import { useState } from 'react';
+import { getGroupedLocations } from '@/services/api';
 
 interface LocationResultsProps {
   locations: Location[];
@@ -13,37 +14,8 @@ interface LocationResultsProps {
 const LocationResults = ({ locations, onFavoriteChange, searchQuery }: LocationResultsProps) => {
   const [activeTab, setActiveTab] = useState<string>('all');
   
-  const groupLocations = (locations: Location[]) => {
-    const groups = {
-      attraction: {
-        title: "Must-Visit Attractions",
-        emoji: "🌟",
-        description: "Incredible sights and experiences you can't miss!",
-        locations: [] as Location[]
-      },
-      hotel: {
-        title: "Cozy Places to Stay",
-        emoji: "🏨",
-        description: "Perfect spots to rest after your adventures",
-        locations: [] as Location[]
-      },
-      restaurant: {
-        title: "Delightful Dining Spots",
-        emoji: "🍽️",
-        description: "Local flavors and culinary experiences to savor",
-        locations: [] as Location[]
-      }
-    };
-
-    locations.forEach(location => {
-      if (location.type in groups) {
-        groups[location.type as keyof typeof groups].locations.push(location);
-      }
-    });
-
-    return Object.values(groups).filter(group => group.locations.length > 0);
-  };
-
+  const groupedLocations = getGroupedLocations(locations);
+  
   const getTravelAssistantMessage = (query?: string) => {
     if (!query) return null;
     
@@ -51,7 +23,8 @@ const LocationResults = ({ locations, onFavoriteChange, searchQuery }: LocationR
       `Hey traveler! 🌈 I found some amazing places in ${query} just for you!`,
       `Looking for adventure in ${query}? I've got you covered with these incredible spots! ✨`,
       `${query} is waiting for you! Check out these wonderful places I've found! 🌟`,
-      `Planning a trip to ${query}? Here's everything you need to know! 🧳`
+      `Planning a trip to ${query}? Here's everything you need to know! 🧳`,
+      `Welcome to ${query}! 🌍 I've gathered all the best places to make your trip unforgettable!`
     ];
     
     return messages[Math.floor(Math.random() * messages.length)];
@@ -64,7 +37,8 @@ const LocationResults = ({ locations, onFavoriteChange, searchQuery }: LocationR
       `Don't forget to try the local cuisine in ${query}! It's a must for any traveler. 🍲`,
       `The best time to visit attractions in ${query} is early morning to avoid crowds. ⏰`,
       `Looking for budget options? Many museums in ${query} offer free entry on certain days! 💰`,
-      `Public transportation in ${query} is very efficient and can save you both time and money. 🚆`
+      `Public transportation in ${query} is very efficient and can save you both time and money. 🚆`,
+      `When visiting ${query}, consider getting a city pass for discounts on multiple attractions! 🎫`
     ];
     
     return tips[Math.floor(Math.random() * tips.length)];
@@ -93,7 +67,6 @@ const LocationResults = ({ locations, onFavoriteChange, searchQuery }: LocationR
     return null;
   }
 
-  const groupedLocations = groupLocations(locations);
   const assistantMessage = getTravelAssistantMessage(searchQuery);
   const travelTip = getTravelTips(searchQuery);
 
