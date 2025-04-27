@@ -1,3 +1,4 @@
+
 export interface Location {
   id: string;
   name: string;
@@ -20,6 +21,12 @@ export interface Weather {
   icon: string;
   humidity: number;
   windSpeed: number;
+  forecast?: {
+    day: string;
+    temperature: number;
+    condition: string;
+    icon: string;
+  }[];
 }
 
 export interface City {
@@ -34,4 +41,10 @@ export interface LocationGroup {
   description: string;
   emoji: string;
   locations: Location[];
+}
+
+export interface TravelTip {
+  text: string;
+  category: 'general' | 'seasonal' | 'local' | 'budget';
+  emoji: string;
 }

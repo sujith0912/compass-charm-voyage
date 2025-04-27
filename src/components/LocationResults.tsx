@@ -1,7 +1,8 @@
 
-import { Location } from '@/types';
+import { Location, LocationGroup } from '@/types';
 import LocationCard from './LocationCard';
-import { Star, Sparkles } from 'lucide-react';
+import { Star, Sparkles, MapPin } from 'lucide-react';
+import { useState } from 'react';
 
 interface LocationResultsProps {
   locations: Location[];
@@ -10,12 +11,14 @@ interface LocationResultsProps {
 }
 
 const LocationResults = ({ locations, onFavoriteChange, searchQuery }: LocationResultsProps) => {
+  const [activeTab, setActiveTab] = useState<string>('all');
+  
   const groupLocations = (locations: Location[]) => {
     const groups = {
       attraction: {
         title: "Must-Visit Attractions",
         emoji: "🌟",
-        description: "Incredible sights you can't miss!",
+        description: "Incredible sights and experiences you can't miss!",
         locations: [] as Location[]
       },
       hotel: {
@@ -27,7 +30,7 @@ const LocationResults = ({ locations, onFavoriteChange, searchQuery }: LocationR
       restaurant: {
         title: "Delightful Dining Spots",
         emoji: "🍽️",
-        description: "Local flavors and culinary experiences",
+        description: "Local flavors and culinary experiences to savor",
         locations: [] as Location[]
       }
     };
@@ -41,6 +44,32 @@ const LocationResults = ({ locations, onFavoriteChange, searchQuery }: LocationR
     return Object.values(groups).filter(group => group.locations.length > 0);
   };
 
+  const getTravelAssistantMessage = (query?: string) => {
+    if (!query) return null;
+    
+    const messages = [
+      `Hey traveler! 🌈 I found some amazing places in ${query} just for you!`,
+      `Looking for adventure in ${query}? I've got you covered with these incredible spots! ✨`,
+      `${query} is waiting for you! Check out these wonderful places I've found! 🌟`,
+      `Planning a trip to ${query}? Here's everything you need to know! 🧳`
+    ];
+    
+    return messages[Math.floor(Math.random() * messages.length)];
+  };
+
+  const getTravelTips = (query?: string) => {
+    if (!query) return null;
+    
+    const tips = [
+      `Don't forget to try the local cuisine in ${query}! It's a must for any traveler. 🍲`,
+      `The best time to visit attractions in ${query} is early morning to avoid crowds. ⏰`,
+      `Looking for budget options? Many museums in ${query} offer free entry on certain days! 💰`,
+      `Public transportation in ${query} is very efficient and can save you both time and money. 🚆`
+    ];
+    
+    return tips[Math.floor(Math.random() * tips.length)];
+  };
+
   if (locations.length === 0 && searchQuery) {
     return (
       <div className="text-center py-12">
@@ -52,6 +81,9 @@ const LocationResults = ({ locations, onFavoriteChange, searchQuery }: LocationR
           <p className="text-gray-500 mt-2">
             Don't worry, traveler! Try searching for a different location or check out our featured destinations! ✨
           </p>
+          <p className="text-gray-500 mt-4 max-w-md">
+            Maybe try a different spelling or a nearby city? I'd love to help you find the perfect spot for your adventure! 🧭
+          </p>
         </div>
       </div>
     );
@@ -62,6 +94,8 @@ const LocationResults = ({ locations, onFavoriteChange, searchQuery }: LocationR
   }
 
   const groupedLocations = groupLocations(locations);
+  const assistantMessage = getTravelAssistantMessage(searchQuery);
+  const travelTip = getTravelTips(searchQuery);
 
   return (
     <div className="container mx-auto py-8">
@@ -79,8 +113,38 @@ const LocationResults = ({ locations, onFavoriteChange, searchQuery }: LocationR
         <p className="text-gray-500">{locations.length} amazing places found</p>
       </div>
 
+      {assistantMessage && (
+        <div className="bg-gradient-to-r from-tourism-teal/10 to-tourism-blue/10 p-4 rounded-lg mb-6 animate-fade-in">
+          <p className="text-lg font-medium">{assistantMessage}</p>
+        </div>
+      )}
+
+      <div className="mb-6">
+        <div className="flex space-x-2 border-b overflow-x-auto pb-2">
+          <button
+            onClick={() => setActiveTab('all')}
+            className={`px-4 py-2 rounded-t-lg font-medium transition ${
+              activeTab === 'all' ? 'bg-tourism-teal/10 border-b-2 border-tourism-teal' : 'hover:bg-gray-100'
+            }`}
+          >
+            All
+          </button>
+          {groupedLocations.map((group, index) => (
+            <button
+              key={index}
+              onClick={() => setActiveTab(group.title)}
+              className={`px-4 py-2 rounded-t-lg font-medium whitespace-nowrap transition flex items-center ${
+                activeTab === group.title ? 'bg-tourism-teal/10 border-b-2 border-tourism-teal' : 'hover:bg-gray-100'
+              }`}
+            >
+              <span className="mr-1">{group.emoji}</span> {group.title}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="space-y-12">
-        {groupedLocations.map((group, index) => (
+        {(activeTab === 'all' ? groupedLocations : groupedLocations.filter(group => group.title === activeTab)).map((group, index) => (
           <div key={index} className="space-y-6">
             <div className="border-b pb-2">
               <h3 className="text-xl font-semibold flex items-center gap-2">
@@ -103,6 +167,14 @@ const LocationResults = ({ locations, onFavoriteChange, searchQuery }: LocationR
         ))}
       </div>
 
+      {travelTip && searchQuery && (
+        <div className="mt-8 p-4 bg-tourism-teal/10 rounded-lg text-gray-700">
+          <p className="text-sm italic">
+            <span className="font-medium">Travel Tip:</span> {travelTip}
+          </p>
+        </div>
+      )}
+
       <div className="mt-8 p-4 bg-tourism-teal/10 rounded-lg text-gray-700">
         <p className="text-sm italic">
           "Hey traveler! 🌟 These are the best spots I found for you! Each place has been carefully chosen to make your trip unforgettable. Don't forget to save your favorites, and let me know if you need more suggestions! ✨"
@@ -113,4 +185,3 @@ const LocationResults = ({ locations, onFavoriteChange, searchQuery }: LocationR
 };
 
 export default LocationResults;
-
