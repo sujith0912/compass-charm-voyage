@@ -1,4 +1,3 @@
-
 export interface Location {
   id: string;
   name: string;
@@ -8,6 +7,11 @@ export interface Location {
   rating: number;
   imageUrl: string;
   priceLevel?: string;
+  category?: string;
+  openingHours?: string[];
+  amenities?: string[];
+  reviews?: number;
+  highlights?: string[];
 }
 
 export interface Weather {
@@ -23,4 +27,11 @@ export interface City {
   country: string;
   description: string;
   imageUrl: string;
+}
+
+export interface LocationGroup {
+  title: string;
+  description: string;
+  emoji: string;
+  locations: Location[];
 }
