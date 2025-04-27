@@ -1,6 +1,6 @@
 import { Location, Weather, City, GeocodeResult } from '../types';
 import { searchLocationsByPlace, geocodePlace } from './openTripMapService';
-import { getWeatherByCity, getWeatherByCoordinates } from './weatherService';
+import { getWeatherByCity as getWeatherByCityFromService, getWeatherByCoordinates } from './weatherService';
 
 // Mock data is kept for fallback and featured cities
 const MOCK_LOCATIONS: Location[] = [
@@ -147,7 +147,7 @@ export const getWeatherByPlace = async (place: string): Promise<Weather | null> 
   
   try {
     // Try to get weather from real API
-    const weather = await getWeatherByCity(place);
+    const weather = await getWeatherByCityFromService(place);
     
     if (weather) {
       return weather;
