@@ -1,7 +1,7 @@
 
 import { Location } from '@/types';
 import { Button } from "@/components/ui/button";
-import { Heart, Star, MapPin } from 'lucide-react';
+import { Heart, Star, MapPin, Globe } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { isLocationFavorite, addFavoriteLocation, removeFavoriteLocation } from '@/services/api';
 
@@ -46,12 +46,17 @@ const LocationCard = ({ location, onFavoriteChange }: LocationCardProps) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden location-card h-full flex flex-col">
+    <div className="bg-white rounded-lg shadow-md overflow-hidden location-card h-full flex flex-col transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
       <div className="relative h-48">
         <img
           src={location.imageUrl}
           alt={location.name}
           className="w-full h-full object-cover"
+          loading="lazy"
+          onError={(e) => {
+            // If image fails to load, replace with a backup image
+            (e.target as HTMLImageElement).src = `https://source.unsplash.com/400x300/?${encodeURIComponent(location.type)},${encodeURIComponent(location.name)}`;
+          }}
         />
         <button
           onClick={toggleFavorite}
@@ -65,6 +70,15 @@ const LocationCard = ({ location, onFavoriteChange }: LocationCardProps) => {
           <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400 mr-1" />
           <span className="text-xs font-medium text-gray-800">{location.rating.toFixed(1)}</span>
         </div>
+        
+        {location.source && (
+          <div className="absolute bottom-2 right-2">
+            <span className="bg-white/80 backdrop-blur-sm text-xs px-2 py-1 rounded-md flex items-center">
+              <Globe className="h-3 w-3 mr-1 text-gray-600" />
+              <span className="text-gray-700">{location.source}</span>
+            </span>
+          </div>
+        )}
       </div>
       
       <div className="p-4 flex flex-col flex-grow">
@@ -75,8 +89,14 @@ const LocationCard = ({ location, onFavoriteChange }: LocationCardProps) => {
           )}
         </div>
         
-        <div className="mb-2 flex items-center">
+        <div className="mb-2 flex flex-wrap gap-1 items-center">
           {renderTypeTag()}
+          
+          {location.highlights && location.highlights.slice(0, 2).map((highlight, i) => (
+            <span key={i} className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded">
+              {highlight}
+            </span>
+          ))}
         </div>
         
         <p className="text-sm text-gray-600 mb-4 flex-grow">{location.description}</p>

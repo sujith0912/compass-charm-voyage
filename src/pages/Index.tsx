@@ -6,8 +6,9 @@ import FeaturedLocations from '@/components/FeaturedLocations';
 import LocationResults from '@/components/LocationResults';
 import WeatherInfo from '@/components/WeatherInfo';
 import Footer from '@/components/Footer';
-import { Location, Weather, TravelTip } from '@/types';
-import { searchLocations, getWeatherByCity, getFavoriteLocations, getLocationsByCity } from '@/services/api';
+import { Location, Weather } from '@/types';
+import { searchLocations, getWeatherByCity, getFavoriteLocations, getLocationsByCity, getWeatherByPlace } from '@/services/api';
+import { geocodePlace } from '@/services/openTripMapService';
 import { Button } from '@/components/ui/button';
 import { MapPin, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -76,29 +77,42 @@ const Index = () => {
     addRecentSearch(query);
     
     try {
+      // First, try to geocode to get the proper city name
+      const geocoded = await geocodePlace(query);
+      let cityName = query;
+      
+      if (geocoded) {
+        // Extract city name from display name (format: "City, State, Country")
+        const parts = geocoded.displayName.split(',');
+        cityName = parts[0].trim();
+        setCurrentCity(cityName);
+        
+        // Get weather for this location
+        const weatherData = await getWeatherByPlace(cityName);
+        setWeather(weatherData);
+      }
+      
+      // Search for locations
       const results = await searchLocations(query);
       setLocations(results);
       
       if (results.length > 0) {
-        // Extract city from first result's address for weather info
-        const cityMatch = results[0].address.split(',')[0].trim();
-        setCurrentCity(cityMatch);
-        
-        // Get weather for the city
-        const weatherData = await getWeatherByCity(cityMatch);
-        setWeather(weatherData);
-        
         toast({
           title: "Places found!",
-          description: `Found ${results.length} amazing places in ${query}`,
+          description: `Found ${results.length} amazing places in ${cityName}`,
         });
       } else {
-        setWeather(null);
-        setCurrentCity('');
+        // If no results, try to get weather anyway if we haven't already
+        if (!geocoded) {
+          const weatherData = await getWeatherByCity(query);
+          setWeather(weatherData);
+          setCurrentCity(query);
+        }
+        
         toast({
-          title: "No results found",
-          description: `Sorry, we couldn't find any places in ${query}`,
-          variant: "destructive",
+          title: "Limited results found",
+          description: `We found limited information for ${query}. Try another nearby city or popular destination.`,
+          variant: "default",
         });
       }
     } catch (error) {
@@ -161,19 +175,37 @@ const Index = () => {
         async (position) => {
           try {
             setLoading(true);
-            // In a real app, we would do a reverse geocoding here
-            // For now, let's just use a placeholder like "Current Location"
-            const locationName = "Your Current Location";
+            
+            // Get the coordinates
+            const { latitude, longitude } = position.coords;
+            
+            // Do reverse geocoding to get the location name
+            const response = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
+            );
+            const data = await response.json();
+            
+            // Extract city name
+            const locationName = data.address?.city || 
+                               data.address?.town || 
+                               data.address?.village || 
+                               "Your Current Location";
+            
             setSearchQuery(locationName);
+            setCurrentCity(locationName);
             addRecentSearch(locationName);
             
-            // For demo purposes, show popular places
-            const results = await searchLocations("Popular Places");
+            // Get weather and locations
+            const weatherData = await getWeatherByPlace(locationName);
+            setWeather(weatherData);
+            
+            // Search for locations near these coordinates
+            const results = await searchLocations(locationName);
             setLocations(results);
             
             toast({
               title: "Location found!",
-              description: "Showing places near you",
+              description: `Showing places near ${locationName}`,
             });
           } catch (error) {
             console.error('Geolocation error:', error);
@@ -222,6 +254,7 @@ const Index = () => {
             isHero={true} 
             recentSearches={recentSearches}
             onClearRecentSearch={clearRecentSearch}
+            isSearching={loading}
           />
           
           {/* Location options */}
@@ -231,19 +264,21 @@ const Index = () => {
               size="sm"
               onClick={handleTryCurrentLocation}
               className="bg-white/20 hover:bg-white/40 text-white"
+              disabled={loading}
             >
               <MapPin className="h-3.5 w-3.5 mr-1" /> Use my location
             </Button>
             
             {/* Quick city chips */}
             <div className="flex flex-wrap justify-center gap-2">
-              {['Paris', 'New York', 'Tokyo', 'Rome'].map(city => (
+              {['Paris', 'New York', 'Tokyo', 'Rome', 'Sydney'].map(city => (
                 <Button 
                   key={city}
                   variant="outline" 
                   size="sm"
                   onClick={() => handleCitySelect(city)}
                   className="bg-white/20 hover:bg-white/40 text-white"
+                  disabled={loading}
                 >
                   <MapPin className="h-3.5 w-3.5 mr-1" /> {city}
                 </Button>

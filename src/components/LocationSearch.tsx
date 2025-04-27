@@ -2,20 +2,22 @@
 import { useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, MapPin, X } from 'lucide-react';
+import { Search, MapPin, X, Loader2 } from 'lucide-react';
 
 interface LocationSearchProps {
   onSearch: (query: string) => void;
   isHero?: boolean;
   recentSearches?: string[];
   onClearRecentSearch?: (search: string) => void;
+  isSearching?: boolean;
 }
 
 const LocationSearch = ({ 
   onSearch, 
   isHero = false,
   recentSearches = [],
-  onClearRecentSearch
+  onClearRecentSearch,
+  isSearching = false
 }: LocationSearchProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isFocused, setIsFocused] = useState(false);
@@ -43,15 +45,16 @@ const LocationSearch = ({
         <div className="relative flex-grow">
           <Input
             type="text"
-            placeholder="Search cities, attractions, hotels..."
+            placeholder="Search any city, town, or tourist spot..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setTimeout(() => setIsFocused(false), 200)}
             className={`${isHero ? 'rounded-r-none sm:rounded-r-none h-12 text-base pl-10' : 'h-10 pl-10'}`}
+            disabled={isSearching}
           />
           <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-          {searchTerm && (
+          {searchTerm && !isSearching && (
             <button 
               type="button"
               onClick={() => setSearchTerm('')}
@@ -60,12 +63,22 @@ const LocationSearch = ({
               <X size={16} />
             </button>
           )}
+          {isSearching && (
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+              <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+            </div>
+          )}
         </div>
         <Button 
           type="submit"
           className={`${isHero ? 'mt-2 sm:mt-0 h-12 sm:rounded-l-none' : 'rounded-l-none'}`}
+          disabled={isSearching || !searchTerm.trim()}
         >
-          <Search className="h-4 w-4 mr-2" />
+          {isSearching ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <Search className="h-4 w-4 mr-2" />
+          )}
           Discover
         </Button>
       </form>

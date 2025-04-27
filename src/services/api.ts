@@ -1,7 +1,8 @@
+import { Location, Weather, City, GeocodeResult } from '../types';
+import { searchLocationsByPlace, geocodePlace } from './openTripMapService';
+import { getWeatherByCity, getWeatherByCoordinates } from './weatherService';
 
-import { Location, Weather, City } from '../types';
-
-// Mock data for now, would be replaced with actual API calls
+// Mock data is kept for fallback and featured cities
 const MOCK_LOCATIONS: Location[] = [
   {
     id: '1',
@@ -65,6 +66,7 @@ const MOCK_LOCATIONS: Location[] = [
   }
 ];
 
+// Keep basic weather data for fallback
 const MOCK_WEATHER: Record<string, Weather> = {
   'Paris': {
     temperature: 18,
@@ -110,41 +112,79 @@ const FEATURED_CITIES: City[] = [
   }
 ];
 
-// Simulated API functions
+// Updated API functions
 export const searchLocations = async (query: string): Promise<Location[]> => {
-  // This would be an API call in a real application
   console.log(`Searching for locations matching: ${query}`);
   
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const results = MOCK_LOCATIONS.filter(
-        location => location.name.toLowerCase().includes(query.toLowerCase()) ||
-                   location.description.toLowerCase().includes(query.toLowerCase())
-      );
-      resolve(results);
-    }, 500); // Simulating API delay
-  });
+  try {
+    // First try to fetch from real API
+    const locations = await searchLocationsByPlace(query);
+    
+    // If we got results, return them
+    if (locations && locations.length > 0) {
+      return locations;
+    }
+    
+    // If API search fails, fall back to mock data
+    console.log('Falling back to mock data search');
+    return MOCK_LOCATIONS.filter(
+      location => location.name.toLowerCase().includes(query.toLowerCase()) ||
+                location.description.toLowerCase().includes(query.toLowerCase())
+    );
+  } catch (error) {
+    console.error('Error in searchLocations:', error);
+    
+    // Return mock data as fallback
+    return MOCK_LOCATIONS.filter(
+      location => location.name.toLowerCase().includes(query.toLowerCase()) ||
+                location.description.toLowerCase().includes(query.toLowerCase())
+    );
+  }
+};
+
+export const getWeatherByPlace = async (place: string): Promise<Weather | null> => {
+  console.log(`Getting weather for place: ${place}`);
+  
+  try {
+    // Try to get weather from real API
+    const weather = await getWeatherByCity(place);
+    
+    if (weather) {
+      return weather;
+    }
+    
+    // If that fails, try to geocode the place and get weather by coordinates
+    const geocoded = await geocodePlace(place);
+    if (geocoded) {
+      return await getWeatherByCoordinates(geocoded.lat, geocoded.lon);
+    }
+    
+    // Fallback to mock data
+    console.log('Falling back to mock weather data');
+    const normalizedPlace = place.split(',')[0].trim();
+    const weatherKey = Object.keys(MOCK_WEATHER).find(
+      key => key.toLowerCase() === normalizedPlace.toLowerCase()
+    );
+    
+    return weatherKey ? MOCK_WEATHER[weatherKey] : null;
+  } catch (error) {
+    console.error('Error in getWeatherByPlace:', error);
+    
+    // Fallback to mock data
+    const normalizedPlace = place.split(',')[0].trim();
+    const weatherKey = Object.keys(MOCK_WEATHER).find(
+      key => key.toLowerCase() === normalizedPlace.toLowerCase()
+    );
+    
+    return weatherKey ? MOCK_WEATHER[weatherKey] : null;
+  }
 };
 
 export const getWeatherByCity = async (city: string): Promise<Weather | null> => {
-  // This would be an API call in a real application
-  console.log(`Getting weather for: ${city}`);
-  
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      // Normalize the city name to match our mock data
-      const normalizedCity = city.split(',')[0].trim();
-      const weather = Object.keys(MOCK_WEATHER).find(
-        key => key.toLowerCase() === normalizedCity.toLowerCase()
-      );
-      
-      resolve(weather ? MOCK_WEATHER[weather] : null);
-    }, 500);
-  });
+  return getWeatherByPlace(city);
 };
 
 export const getFeaturedCities = async (): Promise<City[]> => {
-  // This would be an API call in a real application
   console.log('Getting featured cities');
   
   return new Promise((resolve) => {
@@ -155,17 +195,8 @@ export const getFeaturedCities = async (): Promise<City[]> => {
 };
 
 export const getLocationsByCity = async (city: string): Promise<Location[]> => {
-  // This would be an API call in a real application
   console.log(`Getting locations for city: ${city}`);
-  
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const results = MOCK_LOCATIONS.filter(location => 
-        location.address.toLowerCase().includes(city.toLowerCase())
-      );
-      resolve(results);
-    }, 500);
-  });
+  return searchLocations(city);
 };
 
 // Favorites management (using local storage)
